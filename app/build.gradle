@@ -1,0 +1,106 @@
+/*
+ * Copyright 2017 Chaos Leong
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+apply plugin: 'com.android.application'
+apply plugin: 'kotlin-android'
+
+android {
+    compileSdkVersion sdk_version as int
+    buildToolsVersion build_tools_version
+
+    defaultConfig {
+        applicationId "org.chaos.fx.manga"
+        minSdkVersion min_sdk_version as int
+        targetSdkVersion target_sdk_version as int
+        versionCode appVersionCode
+        versionName appVersionName
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    signingConfigs {
+        release {
+            storeFile file(appKeyStore)
+            keyAlias appKeyAlias
+            storePassword appStorePassword
+            keyPassword appKeyPassword
+        }
+    }
+
+    buildTypes {
+        debug {
+            debuggable true
+            zipAlignEnabled true
+        }
+        release {
+            debuggable false
+            zipAlignEnabled true
+            signingConfig signingConfigs.release
+        }
+    }
+}
+
+dependencies {
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+    androidTestCompile("com.android.support.test.espresso:espresso-core:$espresso_version", {
+        exclude group: 'com.android.support', module: 'support-annotations'
+    })
+    compile "com.android.support:appcompat-v7:$support_version"
+    compile "com.android.support:design:$support_version"
+    testCompile "junit:junit:$junit_version"
+    compile "org.jetbrains.kotlin:kotlin-stdlib-jre7:$kotlin_version"
+}
+
+def getAppVersionCode() {
+    def cmd = 'git rev-list HEAD --no-merges --count'
+    cmd.execute().text.trim().toInteger()
+}
+
+def getAppVersionName() {
+    def cmd = 'git describe --tags'
+    def version = cmd.execute().text.trim()
+
+    def pattern = "-(\\d+)-g"
+    def matcher = version =~ pattern
+
+    if (matcher) {
+        version = version.substring(0, matcher.start()) + "-" + version.substring(matcher.end(), version.length())
+    }
+
+    return version
+}
+
+def getAppKeyStore() {
+    return hasProperty('STORE_FILE') ? STORE_FILE : "debug.keystore"
+}
+
+def getAppKeyAlias() {
+    return hasProperty('KEY_ALIAS') ? KEY_ALIAS : "android"
+}
+
+def getAppStorePassword() {
+    return hasProperty('STORE_PASSWORD') ? STORE_PASSWORD : "androiddebugkey"
+}
+
+def getAppKeyPassword() {
+    return hasProperty('KEY_PASSWORD') ? KEY_PASSWORD : "android"
+}
